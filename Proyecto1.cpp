@@ -531,7 +531,66 @@ class GestorServicios {
 	        }
 	    }
 	    
-	    //Getters
+	        void buscarServicioPorID (const string& id) const {
+            for (const auto& s : servicios) {
+	            if (s -> getIdServicio() == id) {
+		            s -> mostrarInfo();
+		            return;
+        		}
+    		}
+   			cout << "Servicio no encontrado." << endl;
+		}
+        void buscarServicioPorNombre(const string& nombre) const {
+            bool encontrado = false;
+            for (const auto& s : servicios) {
+        		if (s -> getNombre () == nombre) {
+		            s -> mostrarInfo ();
+		            encontrado = true;
+        		}
+    		}
+    		if (!encontrado) cout << "Servicio no encontrado." << endl;
+		}
+        void editarServicio(const string& id) {
+        	for (auto& s : servicios) {
+            	if (s -> getIdServicio () == id) {
+		            string nombre, descripcion;
+		            double precio;
+		            int duracion;
+		
+		            cout << "Nuevo nombre: ";
+		            getline (cin, nombre);
+		            cout << "Nueva descripcion: ";
+		            getline (cin, descripcion);
+		            cout << "Nuevo precio: ";
+		            cin >> precio;
+		            cout << "Nueva duracion: ";
+		            cin >> duracion;
+		            cin.ignore();
+		
+		            s -> setNombre (nombre);
+		            s -> setDescripcion (descripcion);
+		            s -> setPrecioBase (precio);
+		            s -> setDuracionMinutos (duracion);
+		
+		            cout << "Servicio actualizado." << endl;
+		            return;
+        		}
+    		}
+    		cout << "Servicio no encontrado." << endl;
+		}
+        void eliminarServicio(const string& id) {
+        	for (auto it = servicios.begin(); it != servicios.end(); ++it) {
+		        if ((*it) -> getIdServicio() == id) {
+		            delete *it;
+		            servicios.erase(it);
+		            cout << "Servicio eliminado." << endl;
+		            return;
+		        }
+    		}
+    		cout << "Servicio no encontrado." << endl;
+		}                                                                            
+	    
+	     //Getters
 	    T* getServicio (const string& idServicio) const {
 	        for (const auto& servicio : servicios) {
 	            if (servicio -> getIdServicio() == idServicio) {
@@ -628,7 +687,7 @@ class Cita {
 
 int Cita::contadorCitas = 0;
 
-class GestorDuenos {
+	class GestorDuenos {
 	private:
 	    vector <Dueno*> duenos;
 	public:
@@ -645,7 +704,64 @@ class GestorDuenos {
 	            dueno -> mostrarInfo();
 	        }
 	    }
-	    
+        void buscarDuenoPorID (const string& id) const {
+            for (const auto& dueno : duenos) {
+	            if (dueno -> getIdSistema () == id) {
+	            	dueno -> mostrarInfo ();
+	            return;
+            	}
+       		}
+          cout << "Dueno no encontrado." << endl;
+       	}
+
+        void buscarDuenoPorNombre (const string& nombre) const {
+        	bool encontrado = false;
+        	for (const auto& dueno : duenos) {
+        		if (dueno -> getNombre () == nombre) {
+            		dueno -> mostrarInfo ();
+            		encontrado = true;
+        		}
+       		}
+       		if (!encontrado) cout << "Dueno no encontrado." << endl;
+      	}
+
+        void editarDueno (const string& id) {
+         	for (auto& dueno : duenos) {
+        		if (dueno -> getIdSistema () == id) {
+	            string nombre, telefono, email, direccion;
+	            cout << "Nuevo nombre: ";
+	            getline(cin, nombre);
+	            cout << "Nuevo telefono: ";
+	            getline(cin, telefono);
+	            cout << "Nuevo email: ";
+	            getline(cin, email);
+	            cout << "Nueva direccion: ";
+	            getline(cin, direccion);
+	
+	            dueno -> setNombre (nombre);
+	            dueno -> setTelefono (telefono);
+	            dueno -> setEmail (email);
+	            dueno -> setDireccion (direccion);
+	
+	            cout << "Dueno actualizado." << endl;
+	            return;
+        		}	
+      		}
+         	cout << "Dueno no encontrado." << endl;
+        }
+
+        void eliminarDueno (const string& id) {
+          	for (auto it = duenos.begin(); it != duenos.end(); ++it) {
+        		if ((*it) -> getIdSistema () == id) {
+            		delete *it;
+            		duenos.erase(it);
+            		cout << "Dueno eliminado." << endl;
+           			return;
+        		}
+    		}
+    		cout << "Dueno no encontrado." << endl;
+		}
+		
 	    //Getters
 	    const vector <Dueno*>& getDuenos () const {
 	        return duenos;
