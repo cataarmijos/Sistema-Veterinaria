@@ -1481,13 +1481,22 @@ class SistemaVeterinaria {
 	            cout << "8. Cancelar cita" << endl;
 	            cout << "9. Reprogramar cita" << endl;
 	            cout << "10. Eliminar veterinario" << endl;
-	            cout << "11. Cerrar sesion" << endl;
-	            cout << "Seleccione una opcion: ";
+	            cout << "11. Editar dueno" << endl;                                 //DESDE AQUI CAMBIADO 
+                cout << "12. Eliminar dueno" << endl;
+                cout << "13. Buscar dueno por ID" << endl;
+                cout << "14. Buscar dueno por nombre" << endl;
+                cout << "15. Editar servicio" << endl;
+                cout << "16. Eliminar servicio" << endl;
+                cout << "17. Buscar servicio por ID" << endl;
+                cout << "18. Buscar servicio por nombre" << endl;
+                cout << "19. Cerrar sesion" << endl;                                //HASTA AQUI CAMBIADO 
+                        
+			    cout << "Seleccione una opcion: ";
 	            cin >> opcion;
 	            cin.ignore();
 	            cout << endl;
 	
-	            switch (opcion) {
+				switch (opcion) {
 	                case 1: {
 	                	registrarDueno ();
 						break;
@@ -1566,14 +1575,14 @@ class SistemaVeterinaria {
 	                }
 	                case 8: {
 	                	string idCita;
-					        cout << "ID de la cita: ";
-					        getline (cin, idCita);
-					        Cita* cita = gestorCitas.getCita (idCita);
-					        if (cita == NULL) {
-					            cout << "Cita no encontrada." << endl;
-					            return;
-					        }
-					        gestorCitas.eliminarCita (idCita);
+		     	        cout << "ID de la cita: ";
+				        getline (cin, idCita);
+				        Cita* cita = gestorCitas.getCita (idCita);
+				        if (cita == NULL) {
+			            cout << "Cita no encontrada." << endl;
+			                 return;
+			        }
+				        gestorCitas.eliminarCita (idCita);
 						break;
 					}
 	                case 9: {
@@ -1582,8 +1591,8 @@ class SistemaVeterinaria {
 				        getline (cin, idCita);
 				        Cita* cita = gestorCitas.getCita (idCita);
 				        if (cita == NULL) {
-				            cout << "Cita no encontrada." << endl;
-				            return;
+			            cout << "Cita no encontrada." << endl;
+		     	            return;
 				        }
 				
 				        string fecha;
@@ -1602,20 +1611,89 @@ class SistemaVeterinaria {
 	                    gestorVeterinarios.eliminarVeterinario (idVeterinario);
 	                    break;
 	                }
-	                case 11: {
-	                	cerrarSesion ();
-						break;
-					}
-	                default: {
+	                case 11: {                                                     // CAMBIADO DESDE AQUI 
+                        string id;
+                        cout << "ID dueno: ";
+                        getline(cin, id);
+                        gestorDuenos.editarDueno(id); 
+                        break;
+                    }
+
+                    case 12: {
+                        string id;
+                        cout << "ID dueno: ";
+                        getline(cin, id);
+                        gestorDuenos.eliminarDueno(id);
+                        break;
+                    }
+
+                    case 13: {
+                        string id;
+                        cout << "ID dueno: ";
+                        getline(cin, id);
+                        gestorDuenos.buscarDuenoPorID(id);
+                        break;
+                    }
+
+                    case 14: {
+                        string nombre;
+                        cout << "Nombre: ";
+                        getline(cin, nombre);
+                        gestorDuenos.buscarDuenoPorNombre(nombre);
+                        break;
+                    }
+
+                          // Servicios
+                    case 15: {
+                        string id;
+                        cout << "ID servicio: ";
+                        getline(cin, id);
+                        gestorServiciosMedicos.editarServicio(id);
+                        gestorServiciosEsteticos.editarServicio(id);
+                        break;
+                    }
+
+                    case 16: {
+                        string id;
+                        cout << "ID servicio: ";
+                        getline(cin, id);
+                        gestorServiciosMedicos.eliminarServicio(id);
+                        gestorServiciosEsteticos.eliminarServicio(id);
+                        break;
+                    }
+
+                    case 17: {
+                        string id;
+                        cout << "ID servicio: ";
+                        getline(cin, id);
+                        gestorServiciosMedicos.buscarServicioPorID(id);
+                        gestorServiciosEsteticos.buscarServicioPorID(id);
+                        break;
+                    }
+
+                    case 18: {
+                        string nombre;
+                        cout << "Nombre: ";
+                        getline(cin, nombre);
+                        gestorServiciosMedicos.buscarServicioPorNombre(nombre);
+                        gestorServiciosEsteticos.buscarServicioPorNombre(nombre);
+                        break;
+                    }
+
+                    case 19: {
+                        cerrarSesion();
+                        break;
+                    }                                                                               
+	                
+				        default: {
 	                	cout << "Opcion no valida." << endl;
 						break;
 					}
 	                    
 	            }
 	        } 
-			while (opcion != 11);
+			while (opcion != 19);                                                                // CAMBIADO HASTA AQUI 
 	    }
-	
 	    void ejecutar () {
 	        int opcion;
 	        do {
