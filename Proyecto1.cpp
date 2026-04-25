@@ -1667,7 +1667,8 @@ class SistemaVeterinaria {
                 cout << "16. Eliminar servicio" << endl;
                 cout << "17. Buscar servicio por ID" << endl;
                 cout << "18. Buscar servicio por nombre" << endl;
-                cout << "19. Cerrar sesion" << endl;                                //HASTA AQUI CAMBIADO 
+			    cout << "19. Agregar servicio" << endl;
+                cout << "20. Cerrar sesion" << endl;                                //HASTA AQUI CAMBIADO 
                         
 			    cout << "Seleccione una opcion: ";
 	            cin >> opcion;
@@ -1858,7 +1859,10 @@ class SistemaVeterinaria {
                         break;
                     }
 
-                    case 19: {
+					case 19                                                               // AGREGAR SERVICIOS CASE 19 AQUI 
+
+					
+                    case 20: {
                         cerrarSesion();
                         break;
                     }                                                                               
@@ -1870,7 +1874,7 @@ class SistemaVeterinaria {
 	                    
 	            }
 	        } 
-			while (opcion != 19);                                                                // CAMBIADO HASTA AQUI 
+			while (opcion != 20);                                                                // CAMBIADO HASTA AQUI 
 	    }
 	    void ejecutar () {
 	        int opcion;
