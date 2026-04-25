@@ -1128,206 +1128,268 @@ class SistemaVeterinaria {
 	    void cerrarSesion () {
 	        usuarioActual = NULL;
 	    }
-	    void menuDueno () {
-	        int opcion;
-	        do {
-	            cout << endl;
-				cout << "--- MENU DUENO ---" << endl;
-	            cout << "1. Ver mis mascotas" << endl;
-	            cout << "2. Ver historial medico de una mascota" << endl;
-	            cout << "3. Programar cita" << endl;
-	            cout << "4. Ver mis citas" << endl;
-	            cout << "5. Cancelar cita" << endl;
-	            cout << "6. Reprogramar cita" << endl;
-	            cout << "7. Agregar mascota" << endl;
-	            cout << "8. Eliminar mascota" << endl;
-	            cout << "9. Editar mascota" << endl;
-	            cout << "10. Ver veterinarios" << endl;
-	            cout << "11. Cerrar sesion" << endl;
-	            cout << "Seleccione una opcion: ";
-	            cin >> opcion;
-	            cin.ignore();
-	            cout << endl;
-	
-	            switch (opcion) {
-	                case 1: {
-	                	gestorMascotas.listarMascotasDeDueno (usuarioActual -> getIdSistema ());
-						break;
+	   	void menuDueno () {                                                          // CAMBIADO DESDE AQUI 
+             int opcion;
+             do {
+             cout << endl;
+             cout << "--- MENU DUENO ---" << endl;
+             cout << "1. Ver mis mascotas" << endl;
+             cout << "2. Ver historial medico de una mascota" << endl;
+             cout << "3. Programar cita" << endl;
+             cout << "4. Ver mis citas" << endl;
+             cout << "5. Cancelar cita" << endl;
+             cout << "6. Reprogramar cita" << endl;
+             cout << "7. Agregar mascota" << endl;
+             cout << "8. Eliminar mascota" << endl;
+             cout << "9. Editar mascota" << endl;
+             cout << "10. Ver veterinarios" << endl;
+             cout << "11. Listar servicios" << endl;
+             cout << "12. Buscar servicio por nombre" << endl;
+             cout << "13. Cerrar sesion" << endl;
+             cout << "Seleccione una opcion: ";
+             cin >> opcion;
+             cin.ignore();
+             cout << endl;
+
+        switch (opcion) {
+        	        	
+     	    case 1: {
+	            gestorMascotas.listarMascotasDeDueno (usuarioActual -> getIdSistema ());
+				break;
+				}
+
+
+            case 2: {
+                string idMascota;
+                cout << "ID de la mascota: ";
+                getline(cin, idMascota);
+                Mascota* mascota = gestorMascotas.getMascota(idMascota);
+
+                if (mascota == NULL || mascota->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                    cout << "Mascota no encontrada o no pertenece a este dueno." << endl;
+                } else {
+                    mascota->mostrarHistorial();
+                }
+                break;
+                }
+
+            case 3: {
+                string idMascota;
+                cout << "ID de la mascota: ";
+                getline(cin, idMascota);
+                Mascota* mascota = gestorMascotas.getMascota(idMascota);
+
+                if (mascota == NULL) {
+                    cout << "Mascota no encontrada." << endl;
+                    break;
+                }
+
+                if (usuarioActual->getRol() == "Dueno" &&
+                    mascota->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                    cout << "Solo puede agendar citas para sus mascotas." << endl;
+                    break;
+                }
+
+                string idVeterinario;
+                cout << "ID del veterinario: ";
+                getline(cin, idVeterinario);
+                Veterinario* veterinario = gestorVeterinarios.getVeterinario(idVeterinario);
+
+                if (veterinario == NULL) {
+                    cout << "Veterinario no encontrado." << endl;
+                    break;
+                }
+
+                cout << "Servicios medicos disponibles:" << endl;
+                gestorServiciosMedicos.listarServicios();
+
+                cout << "Servicios esteticos disponibles:" << endl;
+                gestorServiciosEsteticos.listarServicios();
+
+                string idServicio;
+                cout << "ID del servicio: ";
+                getline(cin, idServicio);
+
+                Servicio* servicio = gestorServiciosMedicos.getServicio(idServicio);
+                if (servicio == NULL) {
+                    servicio = gestorServiciosEsteticos.getServicio(idServicio);
+                }
+
+                if (servicio == NULL) {
+                    cout << "Servicio no encontrado." << endl;
+                    break;
+                }
+
+                string fecha, hora;
+                cout << "Fecha (dd/mm/aaaa): ";
+                getline(cin, fecha);
+                cout << "Hora (hh:mm): ";
+                getline(cin, hora);
+
+                gestorCitas.agregarCita(new Cita(fecha, hora, servicio, veterinario, mascota));
+                break;
+            }
+
+            case 4: {
+                if (usuarioActual->getRol() == "Dueno") {
+                    Dueno* dueno = (Dueno*) usuarioActual;
+                    gestorCitas.listarCitasPorDueno(dueno->getNombre());
+                }
+                break;
+            }
+
+            case 5: {
+                string idCita;
+                cout << "ID de la cita: ";
+                getline(cin, idCita);
+
+                Cita* cita = gestorCitas.getCita(idCita);
+                if (cita == NULL) {
+                    cout << "Cita no encontrada." << endl;
+                    break;
+                }
+
+                if (usuarioActual->getRol() == "Dueno" &&
+                    cita->getMascotaAtendida()->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                    cout << "Solo puede cancelar citas de sus mascotas." << endl;
+                    break;
+                }
+
+                gestorCitas.eliminarCita(idCita);
+                break;
+            }
+
+            case 6: {
+                string idCita;
+                cout << "ID de la cita: ";
+                getline(cin, idCita);
+
+                Cita* cita = gestorCitas.getCita(idCita);
+                if (cita == NULL) {
+                    cout << "Cita no encontrada." << endl;
+                    break;
+                }
+
+                if (usuarioActual->getRol() == "Dueno" &&
+                    cita->getMascotaAtendida()->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                    cout << "Solo puede reprogramar citas de sus mascotas." << endl;
+                    break;
+                }
+
+                string fecha, hora;
+                cout << "Nueva fecha: ";
+                getline(cin, fecha);
+                cout << "Nueva hora: ";
+                getline(cin, hora);
+
+                gestorCitas.reprogramarCita(idCita, fecha, hora);
+                break;
+            }
+
+            case 7: {
+                if (usuarioActual->getRol() != "Dueno") {
+                    cout << "Dueno no valido." << endl;
+                    break;
+                }
+
+                Dueno* dueno = (Dueno*) usuarioActual;
+                string nombre;
+                int edad;
+
+                cout << "Nombre: ";
+                getline(cin, nombre);
+                cout << "Edad: ";
+                cin >> edad;
+                cin.ignore();
+
+                Mascota* mascota = new Mascota(nombre, edad, dueno);
+                gestorMascotas.agregarMascota(mascota);
+
+                cout << "Mascota registrada con ID: " << mascota->getIdMascota() << endl;
+                break;
+            }
+
+            case 8: {
+                string idMascota;
+                cout << "ID: ";
+                getline(cin, idMascota);
+
+                Mascota* mascota = gestorMascotas.getMascota(idMascota);
+
+                if (mascota == NULL || mascota->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                    cout << "No valida." << endl;
+                } else {
+                    gestorMascotas.eliminarMascota(idMascota);
+                }
+                break;
+            }
+
+            case 9: {
+                string idMascota;
+                cout << "ID: ";
+                getline(cin, idMascota);
+
+                Mascota* mascota = gestorMascotas.getMascota(idMascota);
+
+                if (mascota == NULL || mascota->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                    cout << "No valida." << endl;
+                } else {
+                    string nombre;
+                    int edad;
+
+                    cout << "Nuevo nombre: ";
+                    getline(cin, nombre);
+                    cout << "Edad: ";
+                    cin >> edad;
+                    cin.ignore();
+
+                    mascota->setNombre(nombre);
+                    mascota->setEdad(edad);
+                }
+                break;
+            }
+
+            case 10: {
+			   	gestorVeterinarios.listarVeterinarios ();
+				break;
 					}
-	                case 2: {
-	                    string idMascota;
-	                    cout << "ID de la mascota: ";
-	                    getline (cin, idMascota);
-	                    Mascota* mascota = gestorMascotas.getMascota (idMascota);
-	                    if (mascota == NULL or mascota -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
-	                        cout << "Mascota no encontrada o no pertenece a este dueno." << endl;
-	                    } else {
-	                        mascota -> mostrarHistorial ();
-	                    }
-	                    break;
-	                }
-	                case 3: {
-	                    string idMascota;
-				        cout << "ID de la mascota: ";
-				        getline (cin, idMascota);
-				        Mascota* mascota = gestorMascotas.getMascota (idMascota);
-				        if (mascota == NULL) {
-				            cout << "Mascota no encontrada." << endl;
-				            return;
-				        }
-				        if (usuarioActual -> getRol () == "Dueno" and mascota -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
-				            cout << "Solo puede agendar citas para sus mascotas." << endl;
-				            return;
-				        }
-				
-				        string idVeterinario;
-				        cout << "ID del veterinario: ";
-				        getline (cin, idVeterinario);
-				        Veterinario* veterinario = gestorVeterinarios.getVeterinario (idVeterinario);
-				        if (veterinario == NULL) {
-				            cout << "Veterinario no encontrado." << endl;
-				            return;
-				        }
-				        cout << "Servicios medicos disponibles:" << endl;
-				        gestorServiciosMedicos.listarServicios ();
-				        cout << "Servicios esteticos disponibles: " << endl;
-				        gestorServiciosEsteticos.listarServicios ();
-				
-				        string idServicio;
-						cout << "ID del servicio: ";
-						getline (cin, idServicio);
-						Servicio* servicio = gestorServiciosMedicos.getServicio (idServicio);
-						if (servicio == NULL) {
-						    servicio = gestorServiciosEsteticos.getServicio (idServicio);
-						}
-						if (servicio == NULL) {
-						    cout << "Servicio no encontrado." << endl;
-						    return;
-						}
-				
-				        string fecha;
-				        string hora;
-				        cout << "Fecha (dd/mm/aaaa): ";
-				        getline (cin, fecha);
-				        cout << "Hora (hh:mm): ";
-				        getline (cin, hora);
-				        gestorCitas.agregarCita (new Cita (fecha, hora, servicio, veterinario, mascota));
-	                    break;
-	                }
-	                case 4: {
-	                	if (usuarioActual -> getRol () == "Dueno") {
-    					Dueno* dueno = (Dueno*) usuarioActual;
-    					gestorCitas.listarCitasPorDueno (dueno -> getNombre ());
-}
-	                    break;
-	                }
-	                case 5: {
-	                	string idCita;
-					    cout << "ID de la cita: ";
-					    getline (cin, idCita);
-					    Cita* cita = gestorCitas.getCita (idCita);
-					    if (cita == NULL) {
-					        cout << "Cita no encontrada." << endl;
-					        return;
-					    }
-					    if (usuarioActual -> getRol () == "Dueno" and cita -> getMascotaAtendida () -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
-					        cout << "Solo puede cancelar citas de sus mascotas." << endl;
-					        return;
-					    }
-					    gestorCitas.eliminarCita (idCita);
-						break;
-					}
-	                case 6: {
-	                	string idCita;
-				        cout << "ID de la cita: ";
-				        getline (cin, idCita);
-				        Cita* cita = gestorCitas.getCita (idCita);
-				        if (cita == NULL) {
-				            cout << "Cita no encontrada." << endl;
-				            return;
-				        }
-				        if (usuarioActual -> getRol () == "Dueno" and cita -> getMascotaAtendida () -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
-				            cout << "Solo puede reprogramar citas de sus mascotas." << endl;
-				            return;
-				        }
-				
-				        string fecha;
-				        string hora;
-				        cout << "Nueva fecha (dd/mm/aaaa): ";
-				        getline (cin, fecha);
-				        cout << "Nueva hora (hh:mm): ";
-				        getline (cin, hora);
-				        gestorCitas.reprogramarCita (idCita, fecha, hora);
-						break;
-					}
-	                case 7: {
-	                    string nombre;
-	                    int edad;
-	                    if (usuarioActual -> getRol () != "Dueno") {
-    						cout << "Dueno no encontrado." << endl;
-    						break;
-						}
-						Dueno* dueno = (Dueno*) usuarioActual;
-	                
-	                    cout << "Nombre de la mascota: ";
-	                    getline (cin, nombre);
-	                    cout << "Edad: ";
-	                    cin >> edad;
-	                    cin.ignore();
-	                    Mascota* mascota = new Mascota (nombre, edad, dueno);
-	                    gestorMascotas.agregarMascota (mascota);
-	                    cout << "Mascota registrada con ID: " << mascota -> getIdMascota () << endl;
-	                    break;
-	                }
-	                case 8: {
-	                    string idMascota;
-	                    cout << "ID de la mascota: ";
-	                    getline (cin, idMascota);
-	                    Mascota* mascota = gestorMascotas.getMascota (idMascota);
-	                    if (mascota == NULL or mascota -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
-	                        cout << "Mascota no encontrada o no pertenece a este dueno." << endl;
-	                    } else {
-	                        gestorMascotas.eliminarMascota (idMascota);
-	                    }
-	                    break;
-	                }
-	                case 9: {
-	                    string idMascota;
-	                    cout << "ID de la mascota: ";
-	                    getline (cin, idMascota);
-	                    Mascota* mascota = gestorMascotas.getMascota (idMascota);
-	                    if (mascota == NULL or mascota -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
-	                        cout << "Mascota no encontrada o no pertenece a este dueno." << endl;
-	                    } else {
-	                        string nombre;
-	                        int edad;
-	                        cout << "Nuevo nombre: ";
-	                        getline (cin, nombre);
-	                        cout << "Nueva edad: ";
-	                        cin >> edad;
-	                        cin.ignore();
-	                        mascota -> setNombre (nombre);
-	                        mascota -> setEdad (edad);
-	                        cout << "Mascota actualizada correctamente." << endl;
-	                    }
-	                    break;
-	                }
-	                case 10: {
-	                	gestorVeterinarios.listarVeterinarios ();
-						break;
-					}
-	                case 11: {
-	                	cerrarSesion ();
-						break;
-					}
-	                default: {
-	                	cout << "Opcion no valida." << endl;
-						break;
-					}
-	            }
-	        } while (opcion != 10);
-	    }
-	
+
+            case 11: {
+                cout << "Servicios medicos disponibles:" << endl;
+                gestorServiciosMedicos.listarServicios();
+
+                cout << endl << "Servicios esteticos disponibles:" << endl;
+                gestorServiciosEsteticos.listarServicios();
+                break;
+            }
+
+            case 12: {
+                string nombre;
+                cout << "Ingrese el nombre del servicio: ";
+                getline(cin, nombre);
+
+                cout << "Resultados en servicios medicos:" << endl;
+                gestorServiciosMedicos.buscarServicioPorNombre(nombre);
+
+                cout << "Resultados en servicios esteticos:" << endl;
+                gestorServiciosEsteticos.buscarServicioPorNombre(nombre);
+                break;
+            }
+
+            case 13: {
+                cerrarSesion();
+                cout << "Sesion cerrada." << endl;
+                break;
+            }
+
+            default: {
+                cout << "Opcion no valida." << endl;
+            }
+        }
+
+    } while (opcion != 13);
+}                                                                                        // HASTA AQUI 
+	  
 	    void menuVeterinario() {
 	        int opcion;
 	        do {
