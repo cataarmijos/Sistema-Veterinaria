@@ -3,6 +3,7 @@
 #include <vector>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -237,17 +238,18 @@ class HistorialMedico {
 	    	cout << "Ingrese la altura: ";
 	    	cin >> n_altura;
 	    	setAltura (n_altura);
+	    	cin.ignore ();
 	        entradas.push_back(entrada);
 	    }
 	
 	    void mostrarHistorial () const {
 	        if (entradas.empty()) {
-	            cout << "No hay registros en el historial medico.\n";
+	            cout << "No hay registros en el historial medico." << endl;
 	            return;
 	        }
 	        cout << endl << "Historial medico:" << endl;
-	        cout << "Altura: " << altura << endl;
-	        cout << "Peso: " << peso << endl;
+	        cout << "Altura: " << altura << "cm" << endl;
+	        cout << "Peso: " << peso << "kg" << endl;
 	        int numero = 1;
 	        for (auto &entrada : entradas) {
 	            cout << numero << ". " << entrada << endl;
@@ -268,7 +270,7 @@ class Mascota {
 	    static int contadorMascotas;
 	
 		//Generador de ID
-	    static string generarIdMascota() {
+	    static string generarIdMascota () {
 	        stringstream ss;
 	        ss << "MAS" << setfill('0') << setw(3) << ++contadorMascotas;
 	        return ss.str();
@@ -396,6 +398,7 @@ class Servicio {
 		//Metodos Virtuales Puros
 	    virtual double getRecargo () const = 0;
 	    virtual void mostrarInfo () const = 0;
+	    virtual string procesarServicio () = 0;
 	    
 	    //Destructor
 	    virtual ~Servicio() {}
@@ -450,8 +453,56 @@ class ServicioMedico : public Servicio {
 				return 0;
 			}
 	    }
+	    string procesarServicio() override {
+		    string diagnostico;
+		    int opcion;
+		
+			do {
+			    cout << "1. Requiere diagnostico" << endl;
+			    cout << "2. No requiere diagnostico" << endl;
+			
+			    cout << "Seleccione una opcion: ";
+			    cin >> opcion;
+			    if (cin.fail ()) {
+			    	cin.clear ();
+			    	cin.ignore (1000, '\n');
+			    	opcion = 0;
+			    	cout << "Opcion no valida." << endl;
+			    	continue;
+				}
+				cin.ignore ();
+			    
+			    if (opcion == 1) {
+			    	setRequiereDiagnostico (true);
+			    	cout << "Diagnostico u observaciones: ";
+			    	getline (cin, diagnostico);
+			    	string medicamento;
+			        cout << "Medicamento utilizado: ";
+			        getline (cin, medicamento);
+			        agregarMedicamento(medicamento);
+			        diagnostico += " / Medicamento: " + medicamento;
+			        return diagnostico;	
+				}
+				else if (opcion == 2) {
+					setRequiereDiagnostico (false);
+					cout << "Observaciones: ";
+			    	getline (cin, diagnostico);
+			    	string medicamento;
+			        cout << "Medicamento utilizado: ";
+			        getline (cin, medicamento);
+			        agregarMedicamento (medicamento);
+			        diagnostico += " / Medicamento: " + medicamento;
+			        return diagnostico;
+				}
+				else {
+					cout << "Opcion no valida." << endl;
+				}
+			}
+			while (opcion != 1 and opcion != 2);
+			return "";
+		}
 	    void mostrarInfo () const override {
-	        cout << "Servicio medico - ID: " << idServicio << ", Nombre: " << nombre << ", Precio final (12%): $" << fixed << setprecision(2) << calcularPrecio(15) << endl;
+	        cout << "Servicio medico - ID: " << idServicio << ", Nombre: " << nombre << ", Precio final (12%): $" << fixed << setprecision(2) << calcularPrecio(12) << endl;
 	    }
 	    //Destructor
 	    ~ServicioMedico () {}
@@ -492,19 +543,45 @@ class ServicioEstetico : public Servicio {
 			cout << "Producto no encontrado." << endl;
 		}
 	    double getRecargo() const override {
-	        if (productos.size () >= 3) {
-	        	return 3;
+	        if (productos.size () >= 8) {
+				return 7;
 			}
 			else if (productos.size () >= 5) {
 				return 5;
 			}
-			else if (productos.size () >= 8) {
-				return 7;
+			else if (productos.size () >= 3) {
+	        	return 3;
 			}
 			else {
 				return 0;
 			}
 	    }
+	    string procesarServicio() override {
+		    string diagnostico = "Servicio estetico realizado";
+		    int cantidadProductos;
+		    while (true) {
+		    	cout << "Cantidad de productos usados: ";
+		    	cin >> cantidadProductos;
+		    	if (cin.fail () or cantidadProductos < 0) {
+		    		cin.clear ();
+		    		cin.ignore (1000, '\n');
+		    		cout << "Cantidad invalida." << endl;
+				}
+				else {
+					cin.ignore ();
+					break;
+				}
+			}
+		    for (int i = 0; i < cantidadProductos; i++) {
+		        string producto;
+		        cout << "Producto " << i + 1 << ": ";
+		        getline(cin, producto);
+		        agregarProducto(producto);
+		        diagnostico += " / Producto: " + producto;
+		    }
+
+    		return diagnostico;
+		}
 	    void mostrarInfo() const override {
 	        cout << "Servicio estetico - ID: " << idServicio << ", Nombre: " << nombre << ", Precio final (15%): $" << fixed << setprecision(2) << calcularPrecio(15) << endl;;
 	    }
@@ -523,7 +600,7 @@ class GestorServicios {
 	    }
 	    void listarServicios () const {
 	        if (servicios.empty()) {
-	            cout << "No hay servicios registrados.\n";
+	            cout << "No hay servicios registrados." << endl;
 	            return;
 	        }
 	        for (const auto& servicio : servicios) {
@@ -687,6 +764,29 @@ class Cita {
 
 int Cita::contadorCitas = 0;
 
+void Veterinario :: agregarCita (Cita* cita) {
+	citasAsignadas.push_back (cita);
+}
+
+void Veterinario :: eliminarCita (const string& idCita) {
+	for (auto it = citasAsignadas.begin(); it != citasAsignadas.end(); ++it) {
+		if ((*it) -> getIdCita () == idCita) {
+			citasAsignadas.erase (it);
+			return;
+		}
+	}
+}
+
+void Veterinario :: mostrarCitasAsignadas () const {
+	if (citasAsignadas.empty ()) {
+		cout << "No hay citas asignadas." << endl;
+		return;
+	}
+	for (const auto& cita : citasAsignadas) {
+		cita -> mostrarInfo ();
+	}
+}
+
 	class GestorDuenos {
 	private:
 	    vector <Dueno*> duenos;
@@ -697,7 +797,7 @@ int Cita::contadorCitas = 0;
 	    }
 	    void listarDuenos () const {
 	        if (duenos.empty()) {
-	            cout << "No hay duenos registrados.\n";
+	            cout << "No hay duenos registrados." << endl;
 	            return;
 	        }
 	        for (const auto& dueno : duenos) {
@@ -795,6 +895,7 @@ class GestorMascotas {
 	        for (const auto& mascota : mascotas) {
 	            if (mascota -> getIdMascota () == idMascota) {
 	                mascota -> mostrarInfo ();
+	                return;
 	            }
 	        }
 	        cout  << "Mascota no encontranda." << endl;
@@ -860,6 +961,18 @@ class GestorMascotas {
             cout << "No hay mascotas para este dueno." << endl;
         }
     }
+	    void buscarMascotaPorNombre (const string& nombreMascota) const {
+	        bool encontrada = false;
+	        for (const auto& mascota : mascotas) {
+	            if (mascota -> getNombre () == nombreMascota) {
+	                mascota -> mostrarInfo ();
+	                encontrada = true;
+	            }
+	        }
+	        if (encontrada == false) {
+	            cout << "Mascota no encontranda." << endl;
+	        }
+	    }
 		//Getters
 		Mascota* getMascota (const string& idMascota) const {
         for (auto mascota : mascotas) {
@@ -869,6 +982,16 @@ class GestorMascotas {
         }
         return NULL;
     }
+	    Mascota* getMascotaPorNombre (const string& nombreMascota, const string& idDueno = "") const {
+	        for (auto mascota : mascotas) {
+	            if (mascota -> getNombre () == nombreMascota) {
+	                if (idDueno == "" or mascota -> getPropietario () == NULL or mascota -> getPropietario () -> getIdSistema () == idDueno) {
+	                    return mascota;
+	                }
+	            }
+	        }
+	        return NULL;
+	    }
 		
 		//Destructor
 	    ~GestorMascotas() {
@@ -1122,6 +1245,129 @@ class SistemaVeterinaria {
 	    Usuario* usuarioActual;
 	    
 		//Metodos
+	    bool esBisiesto (int anio) const {
+	        return (anio % 400 == 0) or (anio % 4 == 0 and anio % 100 != 0);
+	    }
+	    void validarFecha (int dia, int mes, int anio) {
+	        if (anio < 0) {
+	            throw invalid_argument ("Fecha invalida.");
+	        }
+	        if (mes < 1 or mes > 12) {
+	            throw invalid_argument ("Fecha invalida.");
+	        }
+	        int diasMes [] = {31,28,31,30,31,30,31,31,30,31,30,31};
+	        if (esBisiesto (anio)) {
+	            diasMes [1] = 29;
+	        }
+	        if (dia < 1 or dia > diasMes [mes - 1]) {
+	            throw invalid_argument ("Fecha invalida.");
+	        }
+	    }
+	    void validarHora (int horas, int minutos) {
+	        if (horas < 0 or horas > 23 or minutos < 0 or minutos > 59) {
+	            throw invalid_argument ("Hora invalida.");
+	        }
+	    }
+	    void validarTurno (int horaIngreso, int minutosIngreso, int horaSalida, int minutosSalida) {
+	        validarHora (horaIngreso, minutosIngreso);
+	        validarHora (horaSalida, minutosSalida);
+	        if (horaSalida < horaIngreso or (horaSalida == horaIngreso and minutosSalida <= minutosIngreso)) {
+	            throw invalid_argument ("Turno invalido.");
+	        }
+	    }
+	    void validarEdad (int edad) {
+	        if (edad < 0) {
+	            throw invalid_argument ("Edad invalida.");
+	        }
+	    }
+	    int leerEntero (const string& mensaje) {
+	        int numero;
+	        while (true) {
+	            try {
+	                cout << mensaje;
+	                cin >> numero;
+	                if (cin.fail ()) {
+	                    throw invalid_argument ("Opcion invalida.");
+	                }
+	                cin.ignore ();
+	                return numero;
+	            }
+	            catch (const exception& e) {
+	                cout << e.what () << endl;
+	                cin.clear ();
+	                cin.ignore (1000, '\n');
+	            }
+	        }
+	    }
+	    int leerEdadValida (const string& mensaje) {
+	        int edad;
+	        while (true) {
+	            try {
+	                edad = leerEntero (mensaje);
+	                validarEdad (edad);
+	                return edad;
+	            }
+	            catch (const exception& e) {
+	                cout << e.what () << endl;
+	            }
+	        }
+	    }
+	    string formatearDosDigitos (int numero) const {
+	        stringstream ss;
+	        ss << setfill ('0') << setw (2) << numero;
+	        return ss.str ();
+	    }
+	    string leerFechaValida () {
+	        int dia;
+	        int mes;
+	        int anio;
+	        while (true) {
+	            try {
+	                dia = leerEntero ("Dia: ");
+	                mes = leerEntero ("Mes: ");
+	                anio = leerEntero ("Anio: ");
+	                validarFecha (dia, mes, anio);
+	                return formatearDosDigitos (dia) + "/" + formatearDosDigitos (mes) + "/" + to_string (anio);
+	            }
+	            catch (const exception& e) {
+	                cout << e.what () << endl;
+	            }
+	        }
+	    }
+	    string leerHoraValida () {
+	        int horas;
+	        int minutos;
+	        while (true) {
+	            try {
+	                horas = leerEntero ("Horas: ");
+	                minutos = leerEntero ("Minutos: ");
+	                validarHora (horas, minutos);
+	                return formatearDosDigitos (horas) + ":" + formatearDosDigitos (minutos);
+	            }
+	            catch (const exception& e) {
+	                cout << e.what () << endl;
+	            }
+	        }
+	    }
+	    string leerTurnoValido () {
+	        int horaIngreso;
+	        int minutosIngreso;
+	        int horaSalida;
+	        int minutosSalida;
+	        while (true) {
+	            try {
+	                horaIngreso = leerEntero ("Hora de ingreso: ");
+	                minutosIngreso = leerEntero ("Minutos de ingreso: ");
+	                horaSalida = leerEntero ("Hora de salida: ");
+	                minutosSalida = leerEntero ("Minutos de salida: ");
+	                validarTurno (horaIngreso, minutosIngreso, horaSalida, minutosSalida);
+	                return formatearDosDigitos (horaIngreso) + ":" + formatearDosDigitos (minutosIngreso) + " - " + formatearDosDigitos (horaSalida) + ":" + formatearDosDigitos (minutosSalida);
+	            }
+	            catch (const exception& e) {
+	                cout << e.what () << endl;
+	            }
+	        }
+	    }
 	    Dueno* autenticarDueno (const string& id, const string& contrasena) const {
 	    	const vector <Dueno*>& duenos = gestorDuenos.getDuenos ();
 	        for (const auto& dueno : duenos) {
@@ -1148,78 +1394,41 @@ class SistemaVeterinaria {
 	        }
 	        return NULL;
 	    }
-	    void registrarDueno () {
-	        string nombre;
-	        string telefono;
-	        string email;
-	        string contrasena;
-	        string cedula;
-	        string direccion;
-	
-	        cout << "Nombre del dueno: ";
-	        getline (cin, nombre);
-	        cout << "Telefono: ";
-	        getline (cin, telefono);
-	        cout << "Email: ";
-	        getline (cin, email);
-	        cout << "Contrasena: ";
-	        getline (cin, contrasena);
-	        cout << "Cedula: ";
-	        getline (cin, cedula);
-	        cout << "Direccion: ";
-	        getline (cin, direccion);
-	
-	        Dueno* dueno = new Dueno (nombre, telefono, email, contrasena, cedula, direccion);
-	        gestorDuenos.agregarDueno (dueno);
-	        cout << "Dueno registrado con ID: " << dueno -> getIdSistema () << endl;
-	    }
-	    void registrarVeterinario () {
-	        string nombre;
-	        string telefono;
-	        string email;
-	        string contrasena;
-	        string especialidad;
-	
-	        cout << "Nombre del veterinario: ";
-	        getline (cin, nombre);
-	        cout << "Telefono: ";
-	        getline (cin, telefono);
-	        cout << "Email: ";
-	        getline (cin, email);
-	        cout << "Contrasena: ";
-	        getline (cin, contrasena);
-	        cout << "Especialidad: ";
-	        getline (cin, especialidad);
-	
-	        Veterinario* veterinario = new Veterinario (nombre, telefono, email, contrasena, especialidad);
-	        gestorVeterinarios.agregarVeterinario (veterinario);
-	        cout << "Veterinario registrado con ID: " << veterinario -> getIdSistema () << endl;
-	    }
-	    void registrarRecepcionista () {
-	        string nombre;
-	        string telefono;
-	        string email;
-	        string contrasena;
-	        string turno;
-	
-	        cout << "Nombre del recepcionista: ";
-	        getline(cin, nombre);
-	        cout << "Telefono: ";
-	        getline(cin, telefono);
-	        cout << "Email: ";
-	        getline(cin, email);
-	        cout << "Contrasena: ";
-	        getline(cin, contrasena);
-	        cout << "Turno (hh:mm - hh:mm): ";
-	        getline(cin, turno);
-	
-	        Recepcionista* recepcionista = new Recepcionista (nombre, telefono, email, contrasena, turno);
-	        recepcionistas.push_back( recepcionista);
-	        cout << "Recepcionista registrado con ID: " << recepcionista -> getIdSistema () << endl;
-	    }
 	public:
 	    //Constructor
-		SistemaVeterinaria () : usuarioActual (NULL) {}
+		SistemaVeterinaria () : usuarioActual (NULL) {
+	        Dueno* dueno = new Dueno ("Carlos Perez", "0991111111", "carlos@gmail.com", "due123", "1723456789", "Quito");
+	        gestorDuenos.agregarDueno (dueno);
+	        Veterinario* veterinario = new Veterinario ("Sofia Ruiz", "0982222222", "sofia@vet.com", "vet123", "General");
+	        gestorVeterinarios.agregarVeterinario (veterinario);
+	        Veterinario* veterinario2 = new Veterinario ("Daniel Torres", "0974444444", "daniel@vet.com", "vet234", "Cirugia");
+	        gestorVeterinarios.agregarVeterinario (veterinario2);
+	        Veterinario* veterinario3 = new Veterinario ("Maria Fernanda", "0965555555", "maria@vet.com", "vet345", "Dermatologia");
+	        gestorVeterinarios.agregarVeterinario (veterinario3);
+	        Veterinario* veterinario4 = new Veterinario ("Paula Rojas", "0956666666", "paula@vet.com", "vet456", "Estetica");
+	        gestorVeterinarios.agregarVeterinario (veterinario4);
+	        Recepcionista* recepcionista = new Recepcionista ("Ana Lopez", "0973333333", "ana@vet.com", "rep123", "08:00 - 17:00");
+	        recepcionistas.push_back (recepcionista);
+	        Mascota* mascota = new Mascota ("Max", "Perro", "Labrador", 5, dueno);
+	        gestorMascotas.agregarMascota (mascota);
+	        ServicioMedico* servicioMedico = new ServicioMedico ("Consulta general", "Revision basica", 25.0, 30, true);
+	        gestorServiciosMedicos.agregarServicio (servicioMedico);
+	        ServicioMedico* servicioMedico2 = new ServicioMedico ("Vacunacion", "Aplicacion de vacunas", 18.0, 20, false);
+	        gestorServiciosMedicos.agregarServicio (servicioMedico2);
+	        ServicioMedico* servicioMedico3 = new ServicioMedico ("Cirugia menor", "Procedimiento quirurgico basico", 90.0, 90, true);
+	        gestorServiciosMedicos.agregarServicio (servicioMedico3);
+	        ServicioMedico* servicioMedico4 = new ServicioMedico ("Revision dermatologica", "Control de piel y pelaje", 35.0, 40, true);
+	        gestorServiciosMedicos.agregarServicio (servicioMedico4);
+	        ServicioEstetico* servicioEstetico = new ServicioEstetico ("Bano y corte", "Aseo completo", 18.0, 45, "Higiene");
+	        gestorServiciosEsteticos.agregarServicio (servicioEstetico);
+	        ServicioEstetico* servicioEstetico2 = new ServicioEstetico ("Limpieza de oidos", "Higiene de oidos", 10.0, 15, "Higiene");
+	        gestorServiciosEsteticos.agregarServicio (servicioEstetico2);
+	        ServicioEstetico* servicioEstetico3 = new ServicioEstetico ("Corte de unas", "Mantenimiento de unas", 8.0, 10, "Belleza");
+	        gestorServiciosEsteticos.agregarServicio (servicioEstetico3);
+	        ServicioEstetico* servicioEstetico4 = new ServicioEstetico ("Spa canino", "Relajacion y cuidado especial", 30.0, 60, "Spa");
+	        gestorServiciosEsteticos.agregarServicio (servicioEstetico4);
+	        gestorCitas.agregarCita (new Cita ("26/04/2026", "10:30", servicioMedico, veterinario, mascota));
+	    }
 		
 		//Metodos
 	    bool iniciarSesion (const string& idSistema, const string& contrasena) {
@@ -1244,267 +1453,215 @@ class SistemaVeterinaria {
 	    void cerrarSesion () {
 	        usuarioActual = NULL;
 	    }
-	   	void menuDueno () {                                                          // CAMBIADO DESDE AQUI 
+	   	void menuDueno () {
              int opcion;
              do {
              cout << endl;
              cout << "--- MENU DUENO ---" << endl;
              cout << "1. Ver mis mascotas" << endl;
-             cout << "2. Ver historial medico de una mascota" << endl;
-             cout << "3. Programar cita" << endl;
-             cout << "4. Ver mis citas" << endl;
-             cout << "5. Cancelar cita" << endl;
-             cout << "6. Reprogramar cita" << endl;
-             cout << "7. Agregar mascota" << endl;
-             cout << "8. Eliminar mascota" << endl;
-             cout << "9. Editar mascota" << endl;
-             cout << "10. Ver veterinarios" << endl;
-             cout << "11. Listar servicios" << endl;
-             cout << "12. Buscar servicio por nombre" << endl;
-             cout << "13. Cerrar sesion" << endl;
-             cout << "Seleccione una opcion: ";
-             cin >> opcion;
-             cin.ignore();
+             cout << "2. Buscar mascota por nombre" << endl;
+             cout << "3. Ver historial medico de una mascota" << endl;
+             cout << "4. Programar cita" << endl;
+             cout << "5. Ver mis citas" << endl;
+             cout << "6. Cancelar cita" << endl;
+             cout << "7. Reprogramar cita" << endl;
+             cout << "8. Agregar mascota" << endl;
+             cout << "9. Eliminar mascota" << endl;
+             cout << "10. Editar mascota" << endl;
+             cout << "11. Ver veterinarios" << endl;
+             cout << "12. Listar servicios" << endl;
+             cout << "13. Buscar servicio por nombre" << endl;
+             cout << "14. Cerrar sesion" << endl;
+             opcion = leerEntero ("Seleccione una opcion: ");
              cout << endl;
 
         switch (opcion) {
-        	        	
      	    case 1: {
 	            gestorMascotas.listarMascotasDeDueno (usuarioActual -> getIdSistema ());
 				break;
 				}
-
-
             case 2: {
-                string idMascota;
-                cout << "ID de la mascota: ";
-                getline(cin, idMascota);
-                Mascota* mascota = gestorMascotas.getMascota(idMascota);
-
-                if (mascota == NULL || mascota->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                string nombreMascota;
+                cout << "Nombre de la mascota: ";
+                getline (cin, nombreMascota);
+                Mascota* mascota = gestorMascotas.getMascotaPorNombre (nombreMascota, usuarioActual -> getIdSistema ());
+                if (mascota == NULL) {
                     cout << "Mascota no encontrada o no pertenece a este dueno." << endl;
                 } else {
-                    mascota->mostrarHistorial();
+                    mascota -> mostrarInfo ();
                 }
                 break;
                 }
-
             case 3: {
                 string idMascota;
                 cout << "ID de la mascota: ";
                 getline(cin, idMascota);
                 Mascota* mascota = gestorMascotas.getMascota(idMascota);
 
+                if (mascota == NULL or mascota -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
+                    cout << "Mascota no encontrada o no pertenece a este dueno." << endl;
+                } else {
+                    mascota -> mostrarHistorial();
+                }
+                break;
+                }
+            case 4: {
+                string idMascota;
+                cout << "ID de la mascota: ";
+                getline(cin, idMascota);
+                Mascota* mascota = gestorMascotas.getMascota(idMascota);
                 if (mascota == NULL) {
                     cout << "Mascota no encontrada." << endl;
                     break;
                 }
-
-                if (usuarioActual->getRol() == "Dueno" &&
-                    mascota->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                if (mascota -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
                     cout << "Solo puede agendar citas para sus mascotas." << endl;
                     break;
                 }
-
                 string idVeterinario;
                 cout << "ID del veterinario: ";
                 getline(cin, idVeterinario);
                 Veterinario* veterinario = gestorVeterinarios.getVeterinario(idVeterinario);
-
                 if (veterinario == NULL) {
                     cout << "Veterinario no encontrado." << endl;
                     break;
                 }
-
                 cout << "Servicios medicos disponibles:" << endl;
-                gestorServiciosMedicos.listarServicios();
-
-                cout << "Servicios esteticos disponibles:" << endl;
-                gestorServiciosEsteticos.listarServicios();
-
+                gestorServiciosMedicos.listarServicios ();
+                cout << "Servicios esteticos disponibles: " << endl;
+                gestorServiciosEsteticos.listarServicios ();
                 string idServicio;
                 cout << "ID del servicio: ";
-                getline(cin, idServicio);
-
-                Servicio* servicio = gestorServiciosMedicos.getServicio(idServicio);
+                getline (cin, idServicio);
+                Servicio* servicio = gestorServiciosMedicos.getServicio (idServicio);
                 if (servicio == NULL) {
-                    servicio = gestorServiciosEsteticos.getServicio(idServicio);
+                    servicio = gestorServiciosEsteticos.getServicio (idServicio);
                 }
-
                 if (servicio == NULL) {
                     cout << "Servicio no encontrado." << endl;
                     break;
                 }
-
-                string fecha, hora;
-                cout << "Fecha (dd/mm/aaaa): ";
-                getline(cin, fecha);
-                cout << "Hora (hh:mm): ";
-                getline(cin, hora);
-
-                gestorCitas.agregarCita(new Cita(fecha, hora, servicio, veterinario, mascota));
+                cout << "Ingrese la fecha de la cita:" << endl;
+                string fecha = leerFechaValida ();
+                cout << "Ingrese la hora de la cita:" << endl;
+                string hora = leerHoraValida ();
+                gestorCitas.agregarCita (new Cita (fecha, hora, servicio, veterinario, mascota));
                 break;
             }
-
-            case 4: {
-                if (usuarioActual->getRol() == "Dueno") {
-                    Dueno* dueno = (Dueno*) usuarioActual;
-                    gestorCitas.listarCitasPorDueno(dueno->getNombre());
-                }
-                break;
-            }
-
             case 5: {
-                string idCita;
-                cout << "ID de la cita: ";
-                getline(cin, idCita);
-
-                Cita* cita = gestorCitas.getCita(idCita);
-                if (cita == NULL) {
-                    cout << "Cita no encontrada." << endl;
-                    break;
-                }
-
-                if (usuarioActual->getRol() == "Dueno" &&
-                    cita->getMascotaAtendida()->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
-                    cout << "Solo puede cancelar citas de sus mascotas." << endl;
-                    break;
-                }
-
-                gestorCitas.eliminarCita(idCita);
+                Dueno* dueno = (Dueno*) usuarioActual;
+                gestorCitas.listarCitasPorDueno (dueno -> getNombre ());
                 break;
             }
-
             case 6: {
                 string idCita;
                 cout << "ID de la cita: ";
                 getline(cin, idCita);
-
                 Cita* cita = gestorCitas.getCita(idCita);
                 if (cita == NULL) {
                     cout << "Cita no encontrada." << endl;
                     break;
                 }
-
-                if (usuarioActual->getRol() == "Dueno" &&
-                    cita->getMascotaAtendida()->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                if (cita -> getMascotaAtendida () -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
+                    cout << "Solo puede cancelar citas de sus mascotas." << endl;
+                    break;
+                }
+                gestorCitas.eliminarCita(idCita);
+                break;
+            }
+            case 7: {
+                string idCita;
+                cout << "ID de la cita: ";
+                getline(cin, idCita);
+                Cita* cita = gestorCitas.getCita(idCita);
+                if (cita == NULL) {
+                    cout << "Cita no encontrada." << endl;
+                    break;
+                }
+                if (cita -> getMascotaAtendida () -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
                     cout << "Solo puede reprogramar citas de sus mascotas." << endl;
                     break;
                 }
-
-                string fecha, hora;
-                cout << "Nueva fecha: ";
-                getline(cin, fecha);
-                cout << "Nueva hora: ";
-                getline(cin, hora);
-
+                cout << "Ingrese la nueva fecha:" << endl;
+                string fecha = leerFechaValida ();
+                cout << "Ingrese la nueva hora:" << endl;
+                string hora = leerHoraValida ();
                 gestorCitas.reprogramarCita(idCita, fecha, hora);
                 break;
             }
-
-            case 7: {
-                if (usuarioActual->getRol() != "Dueno") {
-                    cout << "Dueno no valido." << endl;
-                    break;
-                }
-
+            case 8: {
                 Dueno* dueno = (Dueno*) usuarioActual;
                 string nombre;
-                int edad;
-
                 cout << "Nombre: ";
                 getline(cin, nombre);
-                cout << "Edad: ";
-                cin >> edad;
-                cin.ignore();
-
+                int edad = leerEdadValida ("Edad: ");
                 Mascota* mascota = new Mascota(nombre, edad, dueno);
                 gestorMascotas.agregarMascota(mascota);
-
                 cout << "Mascota registrada con ID: " << mascota->getIdMascota() << endl;
                 break;
             }
-
-            case 8: {
+            case 9: {
                 string idMascota;
                 cout << "ID: ";
                 getline(cin, idMascota);
-
                 Mascota* mascota = gestorMascotas.getMascota(idMascota);
-
-                if (mascota == NULL || mascota->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                if (mascota == NULL or mascota -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
                     cout << "No valida." << endl;
                 } else {
                     gestorMascotas.eliminarMascota(idMascota);
                 }
                 break;
             }
-
-            case 9: {
+            case 10: {
                 string idMascota;
                 cout << "ID: ";
                 getline(cin, idMascota);
-
                 Mascota* mascota = gestorMascotas.getMascota(idMascota);
-
-                if (mascota == NULL || mascota->getPropietario()->getIdSistema() != usuarioActual->getIdSistema()) {
+                if (mascota == NULL or mascota -> getPropietario () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
                     cout << "No valida." << endl;
                 } else {
                     string nombre;
-                    int edad;
-
                     cout << "Nuevo nombre: ";
                     getline(cin, nombre);
-                    cout << "Edad: ";
-                    cin >> edad;
-                    cin.ignore();
-
+                    int edad = leerEdadValida ("Edad: ");
                     mascota->setNombre(nombre);
                     mascota->setEdad(edad);
                 }
                 break;
             }
-
-            case 10: {
+            case 11: {
 			   	gestorVeterinarios.listarVeterinarios ();
 				break;
 					}
-
-            case 11: {
+            case 12: {
                 cout << "Servicios medicos disponibles:" << endl;
                 gestorServiciosMedicos.listarServicios();
-
                 cout << endl << "Servicios esteticos disponibles:" << endl;
                 gestorServiciosEsteticos.listarServicios();
                 break;
             }
-
-            case 12: {
+            case 13: {
                 string nombre;
                 cout << "Ingrese el nombre del servicio: ";
                 getline(cin, nombre);
-
                 cout << "Resultados en servicios medicos:" << endl;
                 gestorServiciosMedicos.buscarServicioPorNombre(nombre);
-
                 cout << "Resultados en servicios esteticos:" << endl;
                 gestorServiciosEsteticos.buscarServicioPorNombre(nombre);
                 break;
             }
-
-            case 13: {
+            case 14: {
                 cerrarSesion();
                 cout << "Sesion cerrada." << endl;
                 break;
             }
-
             default: {
                 cout << "Opcion no valida." << endl;
             }
         }
 
-    } while (opcion != 13);
-}                                                                                        // HASTA AQUI 
+    } while (opcion != 14);
+}
 	  
 	    void menuVeterinario() {
 	        int opcion;
@@ -1513,16 +1670,15 @@ class SistemaVeterinaria {
 	            cout << "--- MENU VETERINARIO ---" << endl;
 	            cout << "1. Registrar mascota" << endl;
 	            cout << "2. Consultar mascota por ID" << endl;
-	            cout << "3. Actualizar mascota" << endl;
-	            cout << "4. Eliminar mascota" << endl;
-	            cout << "5. Ver historial de mascota" << endl;
-	            cout << "6. Modificar el historial de una mascota" << endl;
-	            cout << "7. Ver agenda del dia" << endl;
-	            cout << "8. Completar cita" << endl;
-	            cout << "9. Cerrar sesion" << endl;
-	            cout << "Seleccione una opcion: ";
-	            cin >> opcion;
-	            cin.ignore();
+	            cout << "3. Consultar mascota por nombre" << endl;
+	            cout << "4. Actualizar mascota" << endl;
+	            cout << "5. Eliminar mascota" << endl;
+	            cout << "6. Ver historial de mascota" << endl;
+	            cout << "7. Modificar el historial de una mascota" << endl;
+	            cout << "8. Ver agenda del dia" << endl;
+	            cout << "9. Completar cita" << endl;
+	            cout << "10. Cerrar sesion" << endl;
+	            opcion = leerEntero ("Seleccione una opcion: ");
 	            cout << endl;
 	
 	            switch (opcion) {
@@ -1533,7 +1689,7 @@ class SistemaVeterinaria {
 				        Dueno* dueno = gestorDuenos.getDueno (idDueno);
 				        if (dueno == NULL) {
 				            cout << "Dueno no encontrado." << endl;
-				            return;
+				            break;
 				        }
 				
 				        string nombre;
@@ -1547,9 +1703,7 @@ class SistemaVeterinaria {
 				        getline (cin, especie);
 				        cout << "Raza: ";
 				        getline (cin, raza);
-				        cout << "Edad: ";
-				        cin >> edad;
-				        cin.ignore();
+				        edad = leerEdadValida ("Edad: ");
 				
 				        Mascota* mascota = new Mascota (nombre, especie, raza, edad, dueno);
 				        gestorMascotas.agregarMascota (mascota);
@@ -1564,20 +1718,27 @@ class SistemaVeterinaria {
 	                    break;
 	                }
 	                case 3: {
-	                    string idMascota;
-	                    cout << "ID de la mascota: ";
-	                    getline (cin, idMascota);
-	                    gestorMascotas.editarMascota (idMascota);
+	                    string nombreMascota;
+	                    cout << "Nombre de la mascota: ";
+	                    getline (cin, nombreMascota);
+	                    gestorMascotas.buscarMascotaPorNombre (nombreMascota);
 	                    break;
 	                }
 	                case 4: {
 	                    string idMascota;
 	                    cout << "ID de la mascota: ";
 	                    getline (cin, idMascota);
-	                    gestorMascotas.eliminarMascota(idMascota);
+	                    gestorMascotas.editarMascota (idMascota);
 	                    break;
 	                }
 	                case 5: {
+	                    string idMascota;
+	                    cout << "ID de la mascota: ";
+	                    getline (cin, idMascota);
+	                    gestorMascotas.eliminarMascota(idMascota);
+	                    break;
+	                }
+	                case 6: {
 	                    string idMascota;
 	                    cout << "ID de la mascota: ";
 	                    getline (cin, idMascota);
@@ -1589,7 +1750,7 @@ class SistemaVeterinaria {
 	                    mascota -> mostrarHistorial ();
 	                    break;
 	                }
-	                case 6: {
+	                case 7: {
 	                    string idMascota;
 	                    string entrada;
 	                    cout << "ID de la mascota: ";
@@ -1604,35 +1765,33 @@ class SistemaVeterinaria {
 	                        mascota -> agregarAlHistorial (entrada);
 	                    break;
 	                }
-	                case 7: {
-	                    string fecha;
-	                    cout << "Fecha (dd/mm/aaaa): ";
-	                    getline (cin, fecha);
+	                case 8: {
+	                    cout << "Ingrese la fecha para revisar la agenda:" << endl;
+	                    string fecha = leerFechaValida ();
 	                    gestorCitas.listarAgendaVeterinario (usuarioActual -> getIdSistema (), fecha);
 	                    break;
 	                }
-	                case 8: {
+	                case 9: {
 	                	string idCita;
 				        cout << "ID de la cita: ";
 				        getline (cin, idCita);
 				        Cita* cita = gestorCitas.getCita (idCita);
 				        if (cita == NULL) {
 				            cout << "Cita no encontrada." << endl;
-				            return;
+				            break;
 				        }
 				        if (cita -> getVeterinarioAsignado () -> getIdSistema () != usuarioActual -> getIdSistema ()) {
-				            cout << "Solo puede completar sus propias citas.";
-				            return;
+				            cout << "Solo puede completar sus propias citas." << endl;
+				            break;
 				        }
-				
-				        string diagnostico;
-				        cout << "Diagnostico u observaciones: ";
-				        getline (cin, diagnostico);
-				        cita -> completarCita (diagnostico);
-				        cout << "Cita completada y guardada en el historial." << endl;
+			
+				        Servicio* servicio = cita -> getServicioSolicitado ();
+						string diagnostico = servicio -> procesarServicio ();
+						cita -> completarCita (diagnostico);
+						cout << "Cita completada y guardada en el historial." << endl;
 						break;
 					}
-	                case 9: {
+	                case 10: {
 	                	cerrarSesion ();
 						break;
 					}
@@ -1641,7 +1800,7 @@ class SistemaVeterinaria {
 						break;
 					}
 	            }
-	        } while (opcion != 8);
+	        } while (opcion != 10);
 	    }
 	
 	    void menuRecepcionista() {
@@ -1650,138 +1809,121 @@ class SistemaVeterinaria {
 	            cout << endl;
 	            cout << "--- MENU RECEPCIONISTA ---" << endl;
 	            cout << "1. Registrar dueno" << endl;
-	            cout << "2. Registrar veterinario" << endl;
-	            cout << "3. Listar veterinarios" << endl;
-	            cout << "4. Buscar veterinarios por especialidad" << endl;
-	            cout << "5. Actualizar veterinario" << endl;
-	            cout << "6. Programar cita" << endl;
-	            cout << "7. Consultar citas por fecha" << endl;
-	            cout << "8. Cancelar cita" << endl;
-	            cout << "9. Reprogramar cita" << endl;
+	            cout << "2. Editar dueno" << endl;
+                cout << "3. Eliminar dueno" << endl;
+                cout << "4. Buscar dueno por ID" << endl;
+                cout << "5. Buscar dueno por nombre" << endl;
+                cout << "6. Registrar veterinario" << endl;
+	            cout << "7. Listar veterinarios" << endl;
+	            cout << "8. Buscar veterinarios por especialidad" << endl;
+	            cout << "9. Actualizar veterinario" << endl;
 	            cout << "10. Eliminar veterinario" << endl;
-	            cout << "11. Editar dueno" << endl;                                 //DESDE AQUI CAMBIADO 
-                cout << "12. Eliminar dueno" << endl;
-                cout << "13. Buscar dueno por ID" << endl;
-                cout << "14. Buscar dueno por nombre" << endl;
-                cout << "15. Editar servicio" << endl;
-                cout << "16. Eliminar servicio" << endl;
-                cout << "17. Buscar servicio por ID" << endl;
-                cout << "18. Buscar servicio por nombre" << endl;
-                cout << "19. Cerrar sesion" << endl;                                //HASTA AQUI CAMBIADO 
+                cout << "11. Registrar servicio" << endl;
+                cout << "12. Editar servicio" << endl;
+                cout << "13. Eliminar servicio" << endl;
+                cout << "14. Buscar servicio por ID" << endl;
+                cout << "15. Buscar servicio por nombre" << endl;
+                cout << "16. Programar cita" << endl;
+	            cout << "17. Consultar citas por fecha" << endl;
+	            cout << "18. Cancelar cita" << endl;
+	            cout << "19. Reprogramar cita" << endl;
+                cout << "20. Cerrar sesion" << endl;
                         
-			    cout << "Seleccione una opcion: ";
-	            cin >> opcion;
-	            cin.ignore();
+			    opcion = leerEntero ("Seleccione una opcion: ");
 	            cout << endl;
 	
 				switch (opcion) {
 	                case 1: {
-	                	registrarDueno ();
+                        string nombre;
+                        string telefono;
+                        string email;
+                        string contrasena;
+                        string cedula;
+                        string direccion;
+                        cout << "Nombre del dueno: ";
+                        getline (cin, nombre);
+                        cout << "Telefono: ";
+                        getline (cin, telefono);
+                        cout << "Email: ";
+                        getline (cin, email);
+                        cout << "Contrasena: ";
+                        getline (cin, contrasena);
+                        cout << "Cedula: ";
+                        getline (cin, cedula);
+                        cout << "Direccion: ";
+                        getline (cin, direccion);
+                        Dueno* dueno = new Dueno (nombre, telefono, email, contrasena, cedula, direccion);
+                        gestorDuenos.agregarDueno (dueno);
+                        cout << "Dueno registrado con ID: " << dueno -> getIdSistema () << endl;
 						break;
 					}
 	                case 2: {
-	                	registrarVeterinario ();
+                        string id;
+                        cout << "ID dueno: ";
+                        getline(cin, id);
+                        gestorDuenos.editarDueno(id); 
 						break;
 					}
 	                case 3: {
-	                	gestorVeterinarios.listarVeterinarios ();
+                        string id;
+                        cout << "ID dueno: ";
+                        getline(cin, id);
+                        gestorDuenos.eliminarDueno(id);
 						break;
 					}
 	                case 4: {
+                        string id;
+                        cout << "ID dueno: ";
+                        getline(cin, id);
+                        gestorDuenos.buscarDuenoPorID(id);
+	                    break;
+	                }
+	                case 5: {
+                        string nombre;
+                        cout << "Nombre: ";
+                        getline(cin, nombre);
+                        gestorDuenos.buscarDuenoPorNombre(nombre);
+	                    break;
+	                }
+	                case 6: {
+                        string nombre;
+                        string telefono;
+                        string email;
+                        string contrasena;
+                        string especialidad;
+                        cout << "Nombre del veterinario: ";
+                        getline (cin, nombre);
+                        cout << "Telefono: ";
+                        getline (cin, telefono);
+                        cout << "Email: ";
+                        getline (cin, email);
+                        cout << "Contrasena: ";
+                        getline (cin, contrasena);
+                        cout << "Especialidad: ";
+                        getline (cin, especialidad);
+                        Veterinario* veterinario = new Veterinario (nombre, telefono, email, contrasena, especialidad);
+                        gestorVeterinarios.agregarVeterinario (veterinario);
+                        cout << "Veterinario registrado con ID: " << veterinario -> getIdSistema () << endl;
+						break;
+					}  
+	                case 7: {
+	                	gestorVeterinarios.listarVeterinarios ();
+						break;
+					}
+	                case 8: {
 	                    string especialidad;
 	                    cout << "Especialidad: ";
 	                    getline (cin, especialidad);
 	                    gestorVeterinarios.listarPorEspecialidad (especialidad);
 	                    break;
 	                }
-	                case 5: {
+	                case 9: {
 	                    string idVeterinario;
 	                    cout << "ID del veterinario: ";
 	                    getline (cin, idVeterinario);
 	                    gestorVeterinarios.editarVeterinario (idVeterinario);
 	                    break;
 	                }
-	                case 6: {
-	                	string idMascota;
-				        cout << "ID de la mascota: ";
-				        getline (cin, idMascota);
-				        Mascota* mascota = gestorMascotas.getMascota (idMascota);
-				        if (mascota == NULL) {
-				            cout << "Mascota no encontrada." << endl;
-				            return;
-				        }
-				        string idVeterinario;
-				        cout << "ID del veterinario: ";
-				        getline (cin, idVeterinario);
-				        Veterinario* veterinario = gestorVeterinarios.getVeterinario (idVeterinario);
-				        if (veterinario == NULL) {
-				            cout << "Veterinario no encontrado." << endl;
-				            return;
-				        }
-				        cout << "Servicios medicos disponibles:" << endl;
-				        gestorServiciosMedicos.listarServicios ();
-				        cout << "Servicios esteticos disponibles: " << endl;
-				        gestorServiciosEsteticos.listarServicios ();
-				
-				        string idServicio;
-						cout << "ID del servicio: ";
-						getline (cin, idServicio);
-						Servicio* servicio = gestorServiciosMedicos.getServicio (idServicio);
-						if (servicio == NULL) {
-						    servicio = gestorServiciosEsteticos.getServicio (idServicio);
-						}
-						if (servicio == NULL) {
-						    cout << "Servicio no encontrado." << endl;
-						    return;
-						}
-				
-				        string fecha;
-				        string hora;
-				        cout << "Fecha (dd/mm/aaaa): ";
-				        getline (cin, fecha);
-				        cout << "Hora (hh:mm): ";
-				        getline (cin, hora);
-				        gestorCitas.agregarCita (new Cita (fecha, hora, servicio, veterinario, mascota));
-	                    break;
-					}  
-	                case 7: {
-	                    string fecha;
-	                    cout << "Fecha (dd/mm/aaaa): ";
-	                    getline (cin, fecha);
-	                    gestorCitas.listarCitasPorFecha (fecha);
-	                    break;
-	                }
-	                case 8: {
-	                	string idCita;
-		     	        cout << "ID de la cita: ";
-				        getline (cin, idCita);
-				        Cita* cita = gestorCitas.getCita (idCita);
-				        if (cita == NULL) {
-			            cout << "Cita no encontrada." << endl;
-			                 return;
-			        }
-				        gestorCitas.eliminarCita (idCita);
-						break;
-					}
-	                case 9: {
-	                	string idCita;
-				        cout << "ID de la cita: ";
-				        getline (cin, idCita);
-				        Cita* cita = gestorCitas.getCita (idCita);
-				        if (cita == NULL) {
-			            cout << "Cita no encontrada." << endl;
-		     	            return;
-				        }
-				
-				        string fecha;
-				        string hora;
-				        cout << "Nueva fecha (dd/mm/aaaa): ";
-				        getline (cin, fecha);
-				        cout << "Nueva hora (hh:mm): ";
-				        getline (cin, hora);
-				        gestorCitas.reprogramarCita (idCita, fecha, hora);
-						break;
-					}
 	                case 10: {
 	                    string idVeterinario;
 	                    cout << "ID del veterinario: ";
@@ -1789,40 +1931,59 @@ class SistemaVeterinaria {
 	                    gestorVeterinarios.eliminarVeterinario (idVeterinario);
 	                    break;
 	                }
-	                case 11: {                                                     // CAMBIADO DESDE AQUI 
-                        string id;
-                        cout << "ID dueno: ";
-                        getline(cin, id);
-                        gestorDuenos.editarDueno(id); 
-                        break;
-                    }
-
-                    case 12: {
-                        string id;
-                        cout << "ID dueno: ";
-                        getline(cin, id);
-                        gestorDuenos.eliminarDueno(id);
-                        break;
-                    }
-
-                    case 13: {
-                        string id;
-                        cout << "ID dueno: ";
-                        getline(cin, id);
-                        gestorDuenos.buscarDuenoPorID(id);
-                        break;
-                    }
-
-                    case 14: {
+	                case 11: {
+                        int opcionServicio;
+                        cout << "1. Servicio medico" << endl;
+                        cout << "2. Servicio estetico" << endl;
+                        opcionServicio = leerEntero ("Seleccione una opcion: ");
                         string nombre;
-                        cout << "Nombre: ";
-                        getline(cin, nombre);
-                        gestorDuenos.buscarDuenoPorNombre(nombre);
+                        string descripcion;
+                        double precioBase;
+                        int duracionMinutos;
+                        cout << "Nombre del servicio: ";
+                        getline (cin, nombre);
+                        cout << "Descripcion: ";
+                        getline (cin, descripcion);
+                        cout << "Precio base: ";
+                        cin >> precioBase;
+                        cin.ignore ();
+                        duracionMinutos = leerEntero ("Duracion en minutos: ");
+                        if (opcionServicio == 1) {
+                        	bool requiereDiagnostico;
+                        	int opcion_diag;
+                        	do {
+	                            cout << "1. Requiere diagnostico" << endl;
+	                            cout << "2. No requiere diagnostico" << endl;
+	                            opcion_diag = leerEntero ("Seleccione una opcion: ");
+	                            if (opcion_diag == 1) {
+	                            	requiereDiagnostico = true;
+								}
+								else if (opcion_diag == 2) {
+	                            	requiereDiagnostico = false;
+								}
+								else {
+									cout << "Opcion no valida. " << endl;
+								}
+							}
+							while (opcion_diag != 1 and opcion_diag != 2);
+                            ServicioMedico* servicio = new ServicioMedico (nombre, descripcion, precioBase, duracionMinutos, requiereDiagnostico);
+                            gestorServiciosMedicos.agregarServicio (servicio);
+                            cout << "Servicio medico agregado con ID: " << servicio -> getIdServicio () << endl;
+                        }
+                        else if (opcionServicio == 2) {
+                            string tipoEstetica;
+                            cout << "Tipo de estetica: ";
+                            getline (cin, tipoEstetica);
+                            ServicioEstetico* servicio = new ServicioEstetico (nombre, descripcion, precioBase, duracionMinutos, tipoEstetica);
+                            gestorServiciosEsteticos.agregarServicio (servicio);
+                            cout << "Servicio estetico agregado con ID: " << servicio -> getIdServicio () << endl;
+                        }
+                        else {
+                            cout << "Opcion no valida." << endl;
+                        }
                         break;
                     }
-
-                          // Servicios
-                    case 15: {
+                    case 12: {
                         string id;
                         cout << "ID servicio: ";
                         getline(cin, id);
@@ -1830,8 +1991,7 @@ class SistemaVeterinaria {
                         gestorServiciosEsteticos.editarServicio(id);
                         break;
                     }
-
-                    case 16: {
+                    case 13: {
                         string id;
                         cout << "ID servicio: ";
                         getline(cin, id);
@@ -1839,8 +1999,7 @@ class SistemaVeterinaria {
                         gestorServiciosEsteticos.eliminarServicio(id);
                         break;
                     }
-
-                    case 17: {
+                    case 14: {
                         string id;
                         cout << "ID servicio: ";
                         getline(cin, id);
@@ -1848,8 +2007,7 @@ class SistemaVeterinaria {
                         gestorServiciosEsteticos.buscarServicioPorID(id);
                         break;
                     }
-
-                    case 18: {
+                    case 15: {
                         string nombre;
                         cout << "Nombre: ";
                         getline(cin, nombre);
@@ -1857,8 +2015,81 @@ class SistemaVeterinaria {
                         gestorServiciosEsteticos.buscarServicioPorNombre(nombre);
                         break;
                     }
-
-                    case 19: {
+	                case 16: {
+	                	string idMascota;
+				        cout << "ID de la mascota: ";
+				        getline (cin, idMascota);
+				        Mascota* mascota = gestorMascotas.getMascota (idMascota);
+				        if (mascota == NULL) {
+				            cout << "Mascota no encontrada." << endl;
+				            break;
+				        }
+				        string idVeterinario;
+				        cout << "ID del veterinario: ";
+				        getline (cin, idVeterinario);
+				        Veterinario* veterinario = gestorVeterinarios.getVeterinario (idVeterinario);
+				        if (veterinario == NULL) {
+				            cout << "Veterinario no encontrado." << endl;
+				            break;
+				        }
+				        cout << "Servicios medicos disponibles:" << endl;
+				        gestorServiciosMedicos.listarServicios ();
+				        cout << "Servicios esteticos disponibles: " << endl;
+				        gestorServiciosEsteticos.listarServicios ();
+				        string idServicio;
+				        cout << "ID del servicio: ";
+				        getline (cin, idServicio);
+				        Servicio* servicio = gestorServiciosMedicos.getServicio (idServicio);
+				        if (servicio == NULL) {
+				            servicio = gestorServiciosEsteticos.getServicio (idServicio);
+				        }
+				        if (servicio == NULL) {
+				            cout << "Servicio no encontrado." << endl;
+				            break;
+				        }
+				        cout << "Ingrese la fecha de la cita:" << endl;
+				        string fecha = leerFechaValida ();
+				        cout << "Ingrese la hora de la cita:" << endl;
+				        string hora = leerHoraValida ();
+				        gestorCitas.agregarCita (new Cita (fecha, hora, servicio, veterinario, mascota));
+	                    break;
+					}  
+	                case 17: {
+	                    cout << "Ingrese la fecha para consultar citas:" << endl;
+	                    string fecha = leerFechaValida ();
+	                    gestorCitas.listarCitasPorFecha (fecha);
+	                    break;
+	                }
+	                case 18: {
+	                	string idCita;
+		     	        cout << "ID de la cita: ";
+				        getline (cin, idCita);
+				        Cita* cita = gestorCitas.getCita (idCita);
+				        if (cita == NULL) {
+			            cout << "Cita no encontrada." << endl;
+			                 break;
+			        }
+				        gestorCitas.eliminarCita (idCita);
+						break;
+					}
+	                case 19: {
+	                	string idCita;
+				        cout << "ID de la cita: ";
+				        getline (cin, idCita);
+				        Cita* cita = gestorCitas.getCita (idCita);
+				        if (cita == NULL) {
+			            cout << "Cita no encontrada." << endl;
+		     	            break;
+				        }
+				
+				        cout << "Ingrese la nueva fecha:" << endl;
+				        string fecha = leerFechaValida ();
+				        cout << "Ingrese la nueva hora:" << endl;
+				        string hora = leerHoraValida ();
+				        gestorCitas.reprogramarCita (idCita, fecha, hora);
+						break;
+					}
+                    case 20: {
                         cerrarSesion();
                         break;
                     }                                                                               
@@ -1870,7 +2101,7 @@ class SistemaVeterinaria {
 	                    
 	            }
 	        } 
-			while (opcion != 19);                                                                // CAMBIADO HASTA AQUI 
+			while (opcion != 20);
 	    }
 	    void ejecutar () {
 	        int opcion;
@@ -1880,9 +2111,7 @@ class SistemaVeterinaria {
 	            cout << "1. Iniciar sesion" << endl;
 	            cout << "2. Registrar recepcionista" << endl;
 	            cout << "3. Salir" << endl;
-	            cout << "Seleccione una opcion: ";
-	            cin >> opcion;
-	            cin.ignore();
+	            opcion = leerEntero ("Seleccione una opcion: ");
 	            cout << endl;
 	
 	            switch (opcion) {
@@ -1912,7 +2141,24 @@ class SistemaVeterinaria {
 	                    break;
 	                }
 	                case 2: {
-	                	registrarRecepcionista ();
+                        string nombre;
+                        string telefono;
+                        string email;
+                        string contrasena;
+                        string turno;
+                        cout << "Nombre del recepcionista: ";
+                        getline (cin, nombre);
+                        cout << "Telefono: ";
+                        getline (cin, telefono);
+                        cout << "Email: ";
+                        getline (cin, email);
+                        cout << "Contrasena: ";
+                        getline (cin, contrasena);
+                        cout << "Ingrese el turno del recepcionista:" << endl;
+                        turno = leerTurnoValido ();
+                        Recepcionista* recepcionista = new Recepcionista (nombre, telefono, email, contrasena, turno);
+                        recepcionistas.push_back (recepcionista);
+                        cout << "Recepcionista registrado con ID: " << recepcionista -> getIdSistema () << endl;
 						break;
 					}
 	                case 3: {
