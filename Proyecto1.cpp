@@ -80,6 +80,32 @@ class Usuario {
 	    virtual ~Usuario () {}
 };
 
+class Administrador : public Persona, public Usuario {                                                                    // CAMBIADO DESDE AQUI 
+private:
+    static int contadorAdmin;
+
+    static string generarIdSistema() {
+        stringstream ss;
+        ss << "ADM" << setfill('0') << setw(3) << ++contadorAdmin;
+        return ss.str();
+    }
+
+public:
+    Administrador(const string& nombre, const string& telefono, const string& email, const string& contrasena)
+        : Persona(nombre, telefono, email),
+          Usuario(generarIdSistema(), contrasena, "Administrador") {}
+
+    void mostrarInfo() const override {
+        cout << "\n--- ADMINISTRADOR ---" << endl;
+        cout << "ID: " << idSistema << endl;
+        cout << "Nombre: " << nombre << endl;
+        cout << "Telefono: " << telefono << endl;
+        cout << "Email: " << email << endl;
+    }
+};
+
+int Administrador::contadorAdmin = 0;                                                                                  // CAMBIADO HASTA AQUI 
+
 class Dueno : public Persona, public Usuario {
 	private:
 	    string cedula;
@@ -1242,6 +1268,7 @@ class SistemaVeterinaria {
 	    GestorServicios <ServicioMedico> gestorServiciosMedicos;
 	    GestorServicios <ServicioEstetico> gestorServiciosEsteticos;
 	    vector <Recepcionista*> recepcionistas;
+	    vector<Administrador*> administradores;                                                                               // AGREGADO                             
 	    Usuario* usuarioActual;
 	    
 		//Metodos
@@ -1453,6 +1480,42 @@ class SistemaVeterinaria {
 	    void cerrarSesion () {
 	        usuarioActual = NULL;
 	    }
+	    
+	    void registrarAdministrador() {                                                                //CAMBIADO DESDE AQUI 
+        string nombre, telefono, email, contrasena;
+
+          cin.ignore(); 
+  
+         cout << " --- REGISTRAR ADMINISTRADOR ---";
+         cout << "Nombre: ";
+         getline(cin, nombre);
+         cout << "Telefono: ";
+         getline(cin, telefono);
+         cout << "Email: ";
+         getline(cin, email);
+         cout << "Contrasena: ";
+         getline(cin, contrasena);
+
+         Administrador* admin = new Administrador(nombre, telefono, email, contrasena);
+         administradores.push_back(admin);
+
+         cout << "Administrador registrado con ID: " << admin->getIdSistema() << endl;
+}                                                                                                     // CAMBIADO HASTA AQUI 
+	    
+         void mostrarAdministradores() {                                                             // CAMBIADO DESDE AQUI 
+        cout << " --- LISTA DE ADMINISTRADORES ---";               
+
+         if (administradores.empty()) {
+        cout << "No hay administradores registrados ";
+        return;
+    }
+
+         for (auto admin : administradores) {
+        admin->mostrarInfo();
+    }
+}                                                                                                  // CAMBIADO HASTA AQUI 
+	    
+	    
 	   	void menuDueno () {
              int opcion;
              do {
@@ -2110,36 +2173,51 @@ class SistemaVeterinaria {
 	            cout << "===== SISTEMA VETERINARIA =====" << endl;
 	            cout << "1. Iniciar sesion" << endl;
 	            cout << "2. Registrar recepcionista" << endl;
-	            cout << "3. Salir" << endl;
+	            cout << "3. Registrar administrador" << endl;                                                         // AGREGADO 
+	            cout << "4. Salir" << endl;
 	            opcion = leerEntero ("Seleccione una opcion: ");
 	            cout << endl;
 	
 	            switch (opcion) {
-	                case 1: {
-	                    string idSistema;
-	                    string contrasena;
+	               
+				    case 1: {
+				    	  
+						  string idSistema;      
+                          string contrasena;     
+
+	                	
 	                    cout << "ID del usuario: ";
 	                    getline (cin, idSistema);
 	                    cout << "Contrasena: ";
 	                    getline (cin, contrasena);
 	
-	                    if (iniciarSesion (idSistema, contrasena)) {
-	                        cout << "Sesion iniciada como " << usuarioActual -> getRol() << "." << endl;
-	                        if (usuarioActual -> getRol () == "Dueno") {
-	                            menuDueno ();
-	                        } 
-							else if (usuarioActual -> getRol () == "Veterinario") {
-	                            menuVeterinario ();
-	                        } 
-							else {
-	                            menuRecepcionista ();
-	                        }
-	                    } 
-						else {
-	                        cout << "Contrasena o ID no validos." << endl;
-	                    }
-	                    break;
-	                }
+	            
+					    if (iniciarSesion(idSistema, contrasena)) {                                                 // CAMBIADO DESDE AQUI 
+                            cout << "Sesion iniciada como " << usuarioActual->getRol() << "." << endl;
+
+                        if (usuarioActual->getRol() == "Dueno") {
+                            menuDueno();
+                           } 
+                        else if (usuarioActual->getRol() == "Veterinario") {
+                            menuVeterinario();
+                           } 
+                         else if (usuarioActual->getRol() == "Administrador") {
+                            mostrarAdministradores();
+                          } 
+                        else {
+                            menuRecepcionista();
+                         }
+                       } 
+                       else {
+                       cout << "Contrasena o ID no validos." << endl;
+                        }
+
+                                                                                                                    // CAMBIADO HASTA AQUI
+	                	
+						break;
+					}
+	                  
+			          
 	                case 2: {
                         string nombre;
                         string telefono;
@@ -2161,7 +2239,12 @@ class SistemaVeterinaria {
                         cout << "Recepcionista registrado con ID: " << recepcionista -> getIdSistema () << endl;
 						break;
 					}
-	                case 3: {
+	               
+				    case 3: {                                                                                                    // CAMBIADO DESDE AQUI 
+                        registrarAdministrador();   
+                        break;
+            }                                                                                                                   // CAMBIADO HASTA AQUI 
+				    case 4: {                                                                                                   // CAMBIADO AQUI A CASE 4 
 	                	cout << "Programa finalizado." << endl;
 						break;
 					}   
@@ -2171,7 +2254,7 @@ class SistemaVeterinaria {
 					}
 	            }
 	        }
-			while (opcion != 3);
+			while (opcion != 4);                                                                                                 // CAMBIADO A 4 
 	    }
 	
 	    ~SistemaVeterinaria () {
