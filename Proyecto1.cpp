@@ -2483,6 +2483,14 @@ class SistemaVeterinaria {
     }
     while (opcion != 4);
 }
+	~SistemaVeterinaria () {
+		for (auto recepcionista : recepcionistas) {
+		    delete recepcionista;
+		} 
+		for (auto administrador : administradores) {
+		    delete administrador;
+		} 
+	}
 };
 
 int main () {
